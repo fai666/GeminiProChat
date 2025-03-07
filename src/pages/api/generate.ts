@@ -1,5 +1,5 @@
-import { startChatAndSendMessageStream } from '@/utils/openAI'
 import { verifySignature } from '@/utils/auth'
+import { startChatAndSendMessageStream } from '@/utils/openAI'
 import type { APIRoute } from 'astro'
 
 const sitePassword = import.meta.env.SITE_PASSWORD || ''
@@ -35,7 +35,16 @@ export const post: APIRoute = async(context) => {
 
   try {
     const history = messages.slice(0, -1) // All messages except the last one
-    const newMessage = messages[messages.length - 1].parts.map(part => part.text).join('')
+
+    // 旧模型代码
+    // const newMessage = messages[messages.length - 1].parts.map(part => part.text).join('')
+
+    // 20250306改 
+    // 确保 newMessage 传递的是 parts 数组，随着src\utils\openAI.ts中的parts更改而更改
+    // 更改后的 newMessage 传进去的其实是一个对象 `{ parts: [...] }`，而不是字符串！
+    const newMessage = {
+      parts: messages[messages.length - 1].parts.map(part => ({ text: part.text })) // 🛠️ 确保格式正确
+    }
 
     // Start chat and send message with streaming
     const responseStream = await startChatAndSendMessageStream(history, newMessage)
